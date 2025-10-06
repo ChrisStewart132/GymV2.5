@@ -88,6 +88,51 @@
             line-height: 1; /* Ensure icons align well */
         }
 
+        /* ▼▼▼ NEW: STYLING FOR HEADER ID FILTER BUTTONS ▼▼▼ */
+        #header-workout-id-filter {
+            display: flex;
+            gap: 0.5rem;
+            /* This will push the other actions to the right */
+            margin-left: auto; 
+            margin-right: 1rem;
+        }
+
+        .id-filter-btn {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-weight: 700;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%; /* Makes them circular */
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all var(--transition-speed);
+        }
+
+        .id-filter-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .id-filter-btn.active {
+            background-color: var(--primary-color);
+            border-color: var(--primary-hover);
+            color: white;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            #header-workout-id-filter {
+                /* Hide the buttons on smaller screens to prevent clutter */
+                display: none; 
+            }
+        }
+        /* ▲▲▲ END: NEW STYLING FOR HEADER ID FILTER BUTTONS ▲▲▲ */
+
         /* 3. Filter Sidebar */
         #filter-sidebar {
             position: fixed;
@@ -495,8 +540,20 @@
     <!-- ===== HEADER ===== -->
     <header class="app-header">
         <h1>GymV2.5</h1>
+        
+        <!-- ▼▼▼ NEW: WORKOUT ID FILTER BUTTONS ADDED TO HEADER ▼▼▼ -->
+        <div id="header-workout-id-filter" class="workout-id-buttons">
+            <button class="id-filter-btn" data-id="1" title="Filter by Workout ID 1">1</button>
+            <button class="id-filter-btn" data-id="2" title="Filter by Workout ID 2">2</button>
+            <button class="id-filter-btn" data-id="3" title="Filter by Workout ID 3">3</button>
+            <button class="id-filter-btn" data-id="4" title="Filter by Workout ID 4">4</button>
+            <button class="id-filter-btn" data-id="5" title="Filter by Workout ID 5">5</button>
+            <button class="id-filter-btn" data-id="6" title="Filter by Workout ID 6">6</button>
+            <button class="id-filter-btn" data-id="7" title="Filter by Workout ID 7">7</button>
+        </div>
+        
         <div class="header-actions">
-            <button id="toggle-completed-btn" class="btn btn-sm btn-secondary hidden" aria-label="Show Completed Exercises">Show Completed</button>
+            <button id="toggle-completed-btn" class="btn btn-sm btn-secondary hidden" aria-label="Hide Completed Exercises">Hide Completed</button>
             <button id="theme-toggle" aria-label="Toggle Theme">☀️</button>
             <button id="filter-toggle" aria-label="Show Filters" aria-controls="filter-sidebar" aria-expanded="false">☰</button>
         </div>
@@ -533,15 +590,9 @@
             <label for="ForceSelection">Force</label>
             <select name="ForceSelection" id="ForceSelection"><option value="empty"></option></select>
         </div>
-        <div class="filter-group">
-            <label for="workoutIdFilter">Workout ID</label>
-            <select name="workoutIdFilter" id="workoutIdFilter">
-                <option value="" selected>All</option>
-                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
-            </select>
-        </div>
-
+        
+        <!-- ▼▼▼ REMOVED: WORKOUT ID DROPDOWN IS GONE FROM SIDEBAR ▼▼▼ -->
+        
         <hr style="border-color: var(--border-color); margin: 2rem 0;">
 
         <div class="filter-group">
@@ -611,7 +662,6 @@
         </div>
     </div>
     
-    <!-- NEW: Workout ID Assignment Modal -->
     <div id="workout-id-modal" class="modal-overlay">
         <div class="modal">
             <h2>Assign Workout IDs</h2>
@@ -650,11 +700,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveUserBtn = document.getElementById('saveUserBtn');
     const resetBtn = document.getElementById('resetBtn');
     const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
+    // ▼▼▼ NEW: Reference to the new header filter container ▼▼▼
+    const headerIdFilterContainer = document.getElementById('header-workout-id-filter');
+
 
     // Confirmation Modal Elements
     const confirmationModal = document.getElementById('confirmation-modal');
 
-    // NEW: Workout ID Modal Elements
+    // Workout ID Modal Elements
     const workoutIdModal = document.getElementById('workout-id-modal');
     const modalExerciseName = document.getElementById('modal-exercise-name');
     const modalIdButtonsContainer = document.getElementById('modal-id-buttons');
@@ -664,8 +717,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let USER_LOCKED = true;
     let totalExercises = 0;
     let confirmCallback = null;
-    let areCompletedHidden = true;
-    let currentEditingElement = null; // NEW: To track which exercise is being edited in the modal
+    let areCompletedHidden = false; 
+    let currentEditingElement = null; 
     
     const defaultUserData = {
       "Cable straight-arm pull-down": { "name": "Cable straight-arm pull-down", "workout_ids": [3] },
@@ -736,6 +789,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     fileInput.addEventListener('change', handleFileLoad);
     toggleCompletedBtn.addEventListener('click', toggleCompletedVisibility);
+    
+    // ▼▼▼ NEW: Event listener for the new header filter buttons ▼▼▼
+    headerIdFilterContainer.addEventListener('click', (e) => {
+        const button = e.target.closest('.id-filter-btn');
+        if (!button) return; // Exit if the gap between buttons was clicked
+
+        button.classList.toggle('active');
+        applyFilter();
+    });
     
     container.addEventListener('click', (e) => {
         const exerciseElement = e.target.closest('.exercise');
@@ -1016,17 +1078,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- Filtering Logic ---
-    // EDITED: This entire function is updated for case-insensitive filtering.
     function applyFilter() {
         const query = searchInput.value.toLowerCase();
         
-        // Get dropdown values and convert to lowercase for robust comparison.
         const equipment = document.getElementById("equipment").value.toLowerCase();
         const force = document.getElementById("ForceSelection").value.toLowerCase();
         const target = document.getElementById("TargetMuscleFilter").value.toLowerCase();
         const synergist = document.getElementById("SynergistMuscleFilter").value.toLowerCase();
         
-        const workoutId = document.getElementById("workoutIdFilter").value; // This is a number, no need to lowercase.
+        // ▼▼▼ UPDATED: Get active IDs from the new header buttons ▼▼▼
+        const activeIdFilters = [];
+        headerIdFilterContainer.querySelectorAll('.id-filter-btn.active').forEach(btn => {
+            activeIdFilters.push(parseInt(btn.dataset.id, 10));
+        });
+
         const showSavedOnly = userModeBtn.classList.contains('saved');
         let visibleCount = 0;
 
@@ -1041,7 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 isVisible = false;
             }
 
-            // Filter 2: Main Search Query (already case-insensitive)
+            // Filter 2: Main Search Query
             if (isVisible && query) {
                 const searchableText = [
                     name,
@@ -1056,29 +1121,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Filter 3: Equipment - compare lowercase tag text with lowercase filter value.
+            // Filter 3: Equipment
             if (isVisible && equipment !== 'empty' && !Array.from(e.querySelectorAll('.tag')).some(t => t.textContent.toLowerCase() === equipment)) {
                 isVisible = false;
             }
             
-            // Filter 4: Force - compare lowercase card text with lowercase filter value.
+            // Filter 4: Force
             if (isVisible && force !== 'empty' && !e.querySelector('.meta-force').textContent.toLowerCase().includes(force)) {
                 isVisible = false;
             }
 
-            // Filter 5: Target Muscle - compare lowercase card text with lowercase filter value.
+            // Filter 5: Target Muscle
             if (isVisible && target !== 'empty' && !e.querySelector('.meta-target').textContent.toLowerCase().includes(target)) {
                 isVisible = false;
             }
             
-            // Filter 6: Synergist Muscle - compare lowercase card text with lowercase filter value.
+            // Filter 6: Synergist Muscle
             if (isVisible && synergist !== 'empty' && !e.querySelector('.meta-synergists').textContent.toLowerCase().includes(synergist)) {
                 isVisible = false;
             }
             
-            // Filter 7: Workout ID (no changes needed)
-            if (isVisible && workoutId && !userObj.workout_ids.includes(parseInt(workoutId))) {
-                isVisible = false;
+            // ▼▼▼ UPDATED: Workout ID filter logic for multi-select ▼▼▼
+            if (isVisible && activeIdFilters.length > 0) {
+                // Check if any of the exercise's workout IDs are in our active filter list
+                const hasMatchingId = userObj.workout_ids.some(id => activeIdFilters.includes(id));
+                if (!hasMatchingId) {
+                    isVisible = false;
+                }
             }
 
             e.classList.toggle('hidden', !isVisible);
