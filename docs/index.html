@@ -919,7 +919,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // EDITED: Now opens the custom modal instead of prompting
     function toggleExerciseFavourite(exerciseElement) {
         showWorkoutIdModal(exerciseElement);
     }
@@ -953,7 +952,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleCompletedBtn.classList.toggle('hidden', !anyCompleted);
     }
     
-    // --- NEW: Workout ID Modal Functions ---
+    // --- Workout ID Modal Functions ---
     
     function showWorkoutIdModal(exerciseElement) {
         currentEditingElement = exerciseElement;
@@ -961,7 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const obj = _getExerciseObj(name);
 
         modalExerciseName.textContent = name;
-        modalIdButtonsContainer.innerHTML = ''; // Clear previous buttons
+        modalIdButtonsContainer.innerHTML = '';
 
         for (let i = 1; i <= 7; i++) {
             const btn = document.createElement('button');
@@ -979,7 +978,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function hideWorkoutIdModal() {
         workoutIdModal.classList.remove('visible');
-        currentEditingElement = null; // Clear the state
+        currentEditingElement = null;
     }
 
     modalIdButtonsContainer.addEventListener('click', (e) => {
@@ -1017,13 +1016,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- Filtering Logic ---
+    // EDITED: This entire function is updated for case-insensitive filtering.
     function applyFilter() {
         const query = searchInput.value.toLowerCase();
-        const equipment = document.getElementById("equipment").value;
-        const force = document.getElementById("ForceSelection").value;
-        const target = document.getElementById("TargetMuscleFilter").value;
-        const synergist = document.getElementById("SynergistMuscleFilter").value;
-        const workoutId = document.getElementById("workoutIdFilter").value;
+        
+        // Get dropdown values and convert to lowercase for robust comparison.
+        const equipment = document.getElementById("equipment").value.toLowerCase();
+        const force = document.getElementById("ForceSelection").value.toLowerCase();
+        const target = document.getElementById("TargetMuscleFilter").value.toLowerCase();
+        const synergist = document.getElementById("SynergistMuscleFilter").value.toLowerCase();
+        
+        const workoutId = document.getElementById("workoutIdFilter").value; // This is a number, no need to lowercase.
         const showSavedOnly = userModeBtn.classList.contains('saved');
         let visibleCount = 0;
 
@@ -1033,7 +1036,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let isVisible = true;
 
-            if (showSavedOnly && userObj.workout_ids.length === 0) { isVisible = false; }
+            // Filter 1: Saved Only Mode
+            if (showSavedOnly && userObj.workout_ids.length === 0) {
+                isVisible = false;
+            }
+
+            // Filter 2: Main Search Query (already case-insensitive)
             if (isVisible && query) {
                 const searchableText = [
                     name,
@@ -1043,16 +1051,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.querySelector('.meta-force').textContent,
                     Array.from(e.querySelectorAll('.tag')).map(t => t.textContent).join(' ')
                 ].join(' ').toLowerCase();
-                if (!searchableText.includes(query)) { isVisible = false; }
+                if (!searchableText.includes(query)) {
+                    isVisible = false;
+                }
             }
-            if (isVisible && equipment !== 'empty' && !Array.from(e.querySelectorAll('.tag')).some(t => t.textContent === equipment)) { isVisible = false; }
-            if (isVisible && force !== 'empty' && !e.querySelector('.meta-force').textContent.includes(force)) { isVisible = false; }
-            if (isVisible && target !== 'empty' && !e.querySelector('.meta-target').textContent.includes(target)) { isVisible = false; }
-            if (isVisible && synergist !== 'empty' && !e.querySelector('.meta-synergists').textContent.includes(synergist)) { isVisible = false; }
-            if (isVisible && workoutId && !userObj.workout_ids.includes(parseInt(workoutId))) { isVisible = false; }
+
+            // Filter 3: Equipment - compare lowercase tag text with lowercase filter value.
+            if (isVisible && equipment !== 'empty' && !Array.from(e.querySelectorAll('.tag')).some(t => t.textContent.toLowerCase() === equipment)) {
+                isVisible = false;
+            }
+            
+            // Filter 4: Force - compare lowercase card text with lowercase filter value.
+            if (isVisible && force !== 'empty' && !e.querySelector('.meta-force').textContent.toLowerCase().includes(force)) {
+                isVisible = false;
+            }
+
+            // Filter 5: Target Muscle - compare lowercase card text with lowercase filter value.
+            if (isVisible && target !== 'empty' && !e.querySelector('.meta-target').textContent.toLowerCase().includes(target)) {
+                isVisible = false;
+            }
+            
+            // Filter 6: Synergist Muscle - compare lowercase card text with lowercase filter value.
+            if (isVisible && synergist !== 'empty' && !e.querySelector('.meta-synergists').textContent.toLowerCase().includes(synergist)) {
+                isVisible = false;
+            }
+            
+            // Filter 7: Workout ID (no changes needed)
+            if (isVisible && workoutId && !userObj.workout_ids.includes(parseInt(workoutId))) {
+                isVisible = false;
+            }
 
             e.classList.toggle('hidden', !isVisible);
-            if (isVisible) { visibleCount++; }
+            if (isVisible) {
+                visibleCount++;
+            }
         });
 
         noResultsElement.classList.toggle('hidden', visibleCount > 0);
