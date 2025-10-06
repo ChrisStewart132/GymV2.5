@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <title>GymV2.5</title>
+    <title>GymV2.5 - Workout ID System</title>
 
     <style>
         /* 1. Global Styles & Variables */
@@ -218,7 +218,6 @@
             border-color: var(--gold-color);
         }
         
-        /* NEW: Styles for completed exercises */
         .exercise.completed {
             opacity: 0.6;
         }
@@ -245,17 +244,9 @@
             height: auto;
             display: block;
         }
-
-        .exercise-tags-preview {
-            padding: 0 1rem 1rem 1rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
         
         .exercise-body {
             padding: 1rem;
-            padding-top: 0;
             display: none;
             cursor: default;
         }
@@ -272,6 +263,13 @@
         .exercise-meta span {
             font-weight: 500;
             color: var(--text-color);
+        }
+        
+        .exercise-tags-detail {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
         }
 
         .tag {
@@ -314,54 +312,55 @@
             color: var(--gold-color);
         }
         
-        /* NEW: Style for the completed button when active */
         .completeBtn.completed-true {
             color: var(--success-color);
             background-color: rgba(25, 135, 84, 0.3);
         }
 
-        .notes-section, .user-controls {
+        .user-controls {
             margin-top: 1.5rem;
             border-top: 1px solid var(--border-color);
             padding-top: 1.5rem;
         }
-        .notes-section h3 {
-            margin-bottom: 0.5rem;
+        .user-controls .workout-id-control {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .user-controls input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
             font-size: 1rem;
         }
-        .notes-list p {
-            background-color: var(--background-color);
-            padding: 0.5rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-        .note-input-group {
+
+        .workout-id-buttons {
             display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        .note-input-group input[type="text"] {
-            flex-grow: 1;
-            background-color: var(--background-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 0.5rem;
-            border-radius: var(--border-radius);
-        }
-        .user-controls .category-control {
-            display: flex;
-            align-items: center;
+            flex-wrap: wrap;
             gap: 0.5rem;
         }
-        .user-controls input[type="number"] {
-            width: 50px;
-            padding: 0.5rem;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
+        .workout-id-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: 1px solid transparent;
+            border-radius: 20px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all var(--transition-speed);
         }
+        .workout-id-btn:hover {
+            opacity: 0.8;
+        }
+        .workout-id-btn.active {
+            background-color: var(--primary-color);
+            border-color: var(--primary-hover);
+            font-weight: 700;
+        }
+
 
         /* 6. General Button Styling */
         .btn {
@@ -387,14 +386,13 @@
         .btn.btn-secondary { background-color: var(--secondary-color); }
         .btn.btn-danger { background-color: var(--danger-color); }
         
-        /* NEW: Smaller button style for the header */
         .header-actions .btn-sm {
             padding: 0.4rem 0.8rem;
             font-size: 0.8rem;
             text-transform: none;
         }
 
-        /* 7. Utility & New UI Classes */
+        /* 7. Utility & Modal Styles */
         .hidden { display: none !important; }
 
         #loading {
@@ -462,6 +460,28 @@
             justify-content: center;
             gap: 1rem;
         }
+        
+        /* NEW: Styles for the Workout ID Assignment Modal */
+        #workout-id-modal .modal-body {
+            margin: 1.5rem 0;
+        }
+        #modal-id-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        #modal-id-buttons .workout-id-btn {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            min-width: 44px; /* Better for touch targets */
+        }
+        #modal-exercise-name {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 1.1rem;
+            word-break: break-word;
+        }
 
     </style>
 </head>
@@ -476,7 +496,6 @@
     <header class="app-header">
         <h1>GymV2.5</h1>
         <div class="header-actions">
-            <!-- MODIFIED: Changed button text and aria-label to reflect new default -->
             <button id="toggle-completed-btn" class="btn btn-sm btn-secondary hidden" aria-label="Show Completed Exercises">Show Completed</button>
             <button id="theme-toggle" aria-label="Toggle Theme">☀️</button>
             <button id="filter-toggle" aria-label="Show Filters" aria-controls="filter-sidebar" aria-expanded="false">☰</button>
@@ -491,9 +510,9 @@
         </div>
         
         <div class="filter-group">
-            <label for="searchInput">Search by Name</label>
+            <label for="searchInput">Search by Name, Tag, or Muscle</label>
             <div class="search-wrapper">
-                <input id="searchInput" type="text" placeholder="e.g., Bench Press">
+                <input id="searchInput" type="text" placeholder="e.g., Bench Press, Chest, Barbell">
                 <button class="btn searchBtn" id="searchBtn">Go</button>
             </div>
         </div>
@@ -515,8 +534,8 @@
             <select name="ForceSelection" id="ForceSelection"><option value="empty"></option></select>
         </div>
         <div class="filter-group">
-            <label for="categorySelection">My Category</label>
-            <select name="categorySelection" id="categorySelection">
+            <label for="workoutIdFilter">Workout ID</label>
+            <select name="workoutIdFilter" id="workoutIdFilter">
                 <option value="" selected>All</option>
                 <option value="1">1</option><option value="2">2</option><option value="3">3</option>
                 <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
@@ -545,22 +564,21 @@
             <p>Try adjusting your search or filter criteria.</p>
         </div>
 
-        <!-- Template Exercise Card (this will be cloned) -->
         <div class="exercise hidden" id="exercise-template">
             <img src="assets/data/inverted_exercises/90-degree%20crunch%20on%20bench.webp" alt="Exercise image">
             <div class="card-actions">
                 <button class="icon-btn completeBtn" title="Mark as Done" data-action="toggle-complete">✓</button>
-                <button class="icon-btn favouriteBtn" title="Favourite" data-action="toggle-favourite">☆</button>
+                <button class="icon-btn favouriteBtn" title="Assign Workout IDs" data-action="toggle-favourite">☆</button>
             </div>
             <div class="exercise-header">
                 <h2 class="exercise-name">EXERCISE NAME</h2>
             </div>
             
-            <div class="exercise-tags-preview">
-                <!-- Tags will be dynamically inserted here -->
-            </div>
-
             <div class="exercise-body">
+                <div class="exercise-tags-detail">
+                    <!-- Tags will be dynamically inserted here -->
+                </div>
+
                 <div class="exercise-meta">
                     <p><b>Target:</b> <span class="meta-target"></span></p>
                     <p><b>Synergists:</b> <span class="meta-synergists"></span></p>
@@ -568,31 +586,20 @@
                     <p><b>Force:</b> <span class="meta-force"></span></p>
                 </div>
 
-                <div class="notes-section">
-                    <h3>Notes</h3>
-                    <div class="notes-list">
-                        <p class="exerciseNote hidden">example note</p>
-                    </div>
-                    <div class="user hidden">
-                        <div class="note-input-group">
-                            <input type="text" class="noteInput" placeholder="Add a new note...">
-                            <button class="btn addNoteBtn" data-action="add-note">Add</button>
-                        </div>
-                        <button class="btn btn-secondary clearNotesBtn" style="width: 100%; margin-top: 0.5rem;" data-action="clear-notes">Clear All Notes</button>
-                    </div>
-                </div>
-
                 <div class="user-controls user hidden">
-                    <div class="category-control">
-                        <label>Category:</label>
-                        <input class="exerciseCategory" type="number" value="1" min="1" max="7" data-action="save-category">
+                    <div class="workout-id-control">
+                        <label>Workout IDs:</label>
+                        <input class="exerciseWorkoutIds" type="text" placeholder="e.g., 1, 3, 5" data-action="save-workout-ids">
+                        <div class="workout-id-buttons">
+                            <!-- Quick-assign buttons will be generated here by JS -->
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- ===== MODAL DIALOG ===== -->
+    <!-- ===== MODAL DIALOGS ===== -->
     <div id="confirmation-modal" class="modal-overlay">
         <div class="modal">
             <h2 id="modal-title">Are you sure?</h2>
@@ -604,594 +611,583 @@
         </div>
     </div>
     
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    <!-- NEW: Workout ID Assignment Modal -->
+    <div id="workout-id-modal" class="modal-overlay">
+        <div class="modal">
+            <h2>Assign Workout IDs</h2>
+            <p>For: <b id="modal-exercise-name">Exercise Name</b></p>
+            <div class="modal-body">
+                <div id="modal-id-buttons" class="workout-id-buttons">
+                    <!-- Buttons 1-7 will be dynamically inserted here -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="modal-id-cancel-btn" class="btn btn-secondary">Cancel</button>
+                <button id="modal-id-save-btn" class="btn">Save</button>
+            </div>
+        </div>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
 
-        // --- Element References ---
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const filterToggleBtn = document.getElementById('filter-toggle');
-        const closeFilterBtn = document.getElementById('close-filter-btn');
-        const filterSidebar = document.getElementById('filter-sidebar');
-        const container = document.querySelector('.container');
-        const fileInput = document.getElementById('fileInput');
-        const userLockBtn = document.getElementById('userLockBtn');
-        const exerciseCountElement = document.getElementById('exerciseCount');
-        const loadingIndicator = document.getElementById('loading');
-        const loadingPercentage = document.getElementById('loading-percentage');
-        const noResultsElement = document.getElementById('no-results');
-        const modal = document.getElementById('confirmation-modal');
-        const searchInput = document.getElementById('searchInput');
-        const searchBtn = document.getElementById('searchBtn');
-        const filterSelects = document.querySelectorAll('#filter-sidebar select');
-        const userModeBtn = document.getElementById('userModeBtn');
-        const saveUserBtn = document.getElementById('saveUserBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
+    // --- Element References ---
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const filterToggleBtn = document.getElementById('filter-toggle');
+    const closeFilterBtn = document.getElementById('close-filter-btn');
+    const filterSidebar = document.getElementById('filter-sidebar');
+    const container = document.querySelector('.container');
+    const fileInput = document.getElementById('fileInput');
+    const userLockBtn = document.getElementById('userLockBtn');
+    const exerciseCountElement = document.getElementById('exerciseCount');
+    const loadingIndicator = document.getElementById('loading');
+    const loadingPercentage = document.getElementById('loading-percentage');
+    const noResultsElement = document.getElementById('no-results');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const filterSelects = document.querySelectorAll('#filter-sidebar select');
+    const userModeBtn = document.getElementById('userModeBtn');
+    const saveUserBtn = document.getElementById('saveUserBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
 
-        let USER_LOCKED = true;
-        let totalExercises = 0;
-        let confirmCallback = null;
-        // MODIFIED: State for hiding completed exercises now defaults to true
-        let areCompletedHidden = true;
+    // Confirmation Modal Elements
+    const confirmationModal = document.getElementById('confirmation-modal');
 
-        // <<<<<<< Hard-coded default user data
-        const defaultUserData = {
-          "Cable straight-arm pull-down": { "name": "Cable straight-arm pull-down", "notes": [], "category": 3 },
-          "Incline dumbbell fly": { "name": "Incline dumbbell fly", "notes": [], "category": 3 },
-          "Cable one-arm lateral raise": { "name": "Cable one-arm lateral raise", "notes": [], "category": 2 },
-          "Machine seated crunch": { "name": "Machine seated crunch", "notes": [], "category": 2 },
-          "Cable Y-raise": { "name": "Cable Y-raise", "notes": [], "category": 3 },
-          "Machine high row": { "name": "Machine high row", "notes": [], "category": 3 },
-          "Dumbbell fly": { "name": "Dumbbell fly", "notes": [], "category": 3 },
-          "Rope lat pull-down": { "name": "Rope lat pull-down", "notes": [], "category": 3 },
-          "Alternating dumbbell front raise": { "name": "Alternating dumbbell front raise", "notes": [], "category": 3 },
-          "Dumbbell bench press": { "name": "Dumbbell bench press", "notes": [], "category": 3 },
-          "Double cable front raise": { "name": "Double cable front raise", "notes": [], "category": 3 },
-          "Cable wide-grip upright row": { "name": "Cable wide-grip upright row", "notes": [], "category": 3 },
-          "Plate front raise": { "name": "Plate front raise", "notes": [], "category": 3 },
-          "Front plank": { "name": "Front plank", "notes": [], "category": 3 },
-          "Cable rear drive": { "name": "Cable rear drive", "notes": [], "category": 3 },
-          "Close-grip barbell bench press": { "name": "Close-grip barbell bench press", "notes": [], "category": 3 },
-          "Machine triceps extension": { "name": "Machine triceps extension", "notes": [], "category": 2 },
-          "Dumbbell concentration curl": { "name": "Dumbbell concentration curl", "notes": ["18kg"], "category": 1 },
-          "Dumbbell side bend": { "name": "Dumbbell side bend", "notes": [], "category": 3 },
-          "Seated dumbbell front raise": { "name": "Seated dumbbell front raise", "notes": [], "category": 3 },
-          "Wide-grip cable row": { "name": "Wide-grip cable row", "notes": [], "category": 3 },
-          "Pull-up": { "name": "Pull-up", "notes": [], "category": 1 },
-          "Machine fly": { "name": "Machine fly", "notes": [], "category": 1 },
-          "Dumbbell wide-grip upright row": { "name": "Dumbbell wide-grip upright row", "notes": [], "category": 3 },
-          "Smith machine wide-grip upright row": { "name": "Smith machine wide-grip upright row", "notes": [], "category": 3 },
-          "Standing incline cable fly": { "name": "Standing incline cable fly", "notes": [], "category": 3 },
-          "Cable side bend": { "name": "Cable side bend", "notes": [], "category": 3 },
-          "Cable one-arm reverse-grip triceps push-down": { "name": "Cable one-arm reverse-grip triceps push-down", "notes": [], "category": 3 },
-          "Kneeling cable crunch": { "name": "Kneeling cable crunch", "notes": [], "category": 3 },
-          "Underhand Yates row": { "name": "Underhand Yates row", "notes": [], "category": 3 },
-          "Lying one-arm reverse dumbbell fly": { "name": "Lying one-arm reverse dumbbell fly", "notes": [], "category": 3 },
-          "Chest-supported underhand-grip T-bar row": { "name": "Chest-supported underhand-grip T-bar row", "notes": [], "category": 3 },
-          "Cable rear delt row": { "name": "Cable rear delt row", "notes": [], "category": 3 },
-          "Prone incline wide-grip upright row": { "name": "Prone incline wide-grip upright row", "notes": [], "category": 3 },
-          "Machine front pull-down": { "name": "Machine front pull-down", "notes": ["-seat 6"], "category": 3 },
-          "Svend press": { "name": "Svend press", "notes": [], "category": 3 },
-          "Cable one-arm front raise": { "name": "Cable one-arm front raise", "notes": [], "category": 3 },
-          "Machine one-arm row": { "name": "Machine one-arm row", "notes": ["55kg"], "category": 1 },
-          "Seated dumbbell overhead press": { "name": "Seated dumbbell overhead press", "notes": [], "category": 2 },
-          "Cable horizontal Pallof press": { "name": "Cable horizontal Pallof press", "notes": [], "category": 3 },
-          "T-bar row": { "name": "T-bar row", "notes": [], "category": 3 },
-          "Cable face pull": { "name": "Cable face pull", "notes": ["----Wtf 30kg maybe", "----But i have to lean back way too far,, ", "---Fix form", "-", "-Y", "20 kg"], "category": 1 },
-          "Machine chest press": { "name": "Machine chest press", "notes": ["Seat 4 handles 4 65kg"], "category": 2 },
-          "Barbell bench press": { "name": "Barbell bench press", "notes": [], "category": 2 },
-          "Landmine row": { "name": "Landmine row", "notes": [], "category": 3 },
-          "Barbell front raise": { "name": "Barbell front raise", "notes": [], "category": 2 },
-          "EZ bar curl": { "name": "EZ bar curl", "notes": ["25-30kg slow and far"], "category": 1 },
-          "Cable concentration triceps extension": { "name": "Cable concentration triceps extension", "notes": [], "category": 3 },
-          "Dumbbell lateral raise": { "name": "Dumbbell lateral raise", "notes": [], "category": 3 },
-          "Straight-back seated cable row with straight bar": { "name": "Straight-back seated cable row with straight bar", "notes": [], "category": 3 },
-          "Roman chair sit-up": { "name": "Roman chair sit-up", "notes": [], "category": 3 },
-          "Barbell wide-grip upright row": { "name": "Barbell wide-grip upright row", "notes": [], "category": 3 },
-          "Cable hip adduction": { "name": "Cable hip adduction", "notes": [], "category": 3 },
-          "Smith machine incline bench press": { "name": "Smith machine incline bench press", "notes": [], "category": 3 },
-          "Straight-back seated underhand cable row": { "name": "Straight-back seated underhand cable row", "notes": [], "category": 3 },
-          "Seated cable row": { "name": "Seated cable row", "notes": ["", "50kg"], "category": 1 },
-          "Smith machine shoulder press": { "name": "Smith machine shoulder press", "notes": [], "category": 3 },
-          "Leg extension": { "name": "Leg extension", "notes": [], "category": 3 },
-          "Wide-grip lat pull-down": { "name": "Wide-grip lat pull-down", "notes": [], "category": 3 },
-          "Seated weighted neck extension": { "name": "Seated weighted neck extension", "notes": [], "category": 3 },
-          "Double cable neutral-grip lat pull-down": { "name": "Double cable neutral-grip lat pull-down", "notes": [], "category": 3 },
-          "Medium-grip lat pull-down": { "name": "Medium-grip lat pull-down", "notes": [], "category": 3 },
-          "Machine Lateral Raise": { "name": "Machine Lateral Raise", "notes": ["seat low", "front 5"], "category": 2 },
-          "Machine-assisted chest dip": { "name": "Machine-assisted chest dip", "notes": [], "category": 2 },
-          "Seated dumbbell lateral raise": { "name": "Seated dumbbell lateral raise", "notes": [], "category": 3 },
-          "High front plank with arm raise": { "name": "High front plank with arm raise", "notes": [], "category": 3 },
-          "Push-up": { "name": "Push-up", "notes": [], "category": 3 },
-          "Seated cable cross-arm twist": { "name": "Seated cable cross-arm twist", "notes": [], "category": 3 },
-          "Triceps rope push-down": { "name": "Triceps rope push-down", "notes": ["27kg"], "category": 2 },
-          "Machine leg raise crunch": { "name": "Machine leg raise crunch", "notes": ["Seat low 60kg"], "category": 1 },
-          "Smith machine Yates row": { "name": "Smith machine Yates row", "notes": [], "category": 3 },
-          "Machine triceps dip": { "name": "Machine triceps dip", "notes": [], "category": 3 },
-          "Lying weighted lateral neck flexion": { "name": "Lying weighted lateral neck flexion", "notes": [], "category": 3 },
-          "Standing high to low cable fly": { "name": "Standing high to low cable fly", "notes": [], "category": 3 },
-          "Decline crunch": { "name": "Decline crunch", "notes": [], "category": 3 },
-          "Standing cable fly": { "name": "Standing cable fly", "notes": [], "category": 3 },
-          "Machine reverse fly": { "name": "Machine reverse fly", "notes": ["seat 6", "top 0"], "category": 2 },
-          "Standing twisting cable high row": { "name": "Standing twisting cable high row", "notes": [], "category": 1 },
-          "Close neutral-grip lat pull-down": { "name": "Close neutral-grip lat pull-down", "notes": [], "category": 3 },
-          "Incline dumbbell bench press": { "name": "Incline dumbbell bench press", "notes": [], "category": 3 },
-          "Triceps dip": { "name": "Triceps dip", "notes": [], "category": 3 },
-          "Twisting cable overhead press": { "name": "Twisting cable overhead press", "notes": [], "category": 3 },
-          "EZ bar wide-grip upright row": { "name": "EZ bar wide-grip upright row", "notes": [], "category": 3 },
-          "Machine preacher curl": { "name": "Machine preacher curl", "notes": ["50kg"], "category": 1 },
-          "Bent-over dumbbell row": { "name": "Bent-over dumbbell row", "notes": [], "category": 3 },
-          "Cable cross-over": { "name": "Cable cross-over", "notes": [], "category": 3 },
-          "Dumbbell w-press": { "name": "Dumbbell w-press", "notes": [], "category": 3 },
-          "Incline dumbbell front raise": { "name": "Incline dumbbell front raise", "notes": [], "category": 3 },
-          "Barbell curl": { "name": "Barbell curl", "notes": [], "category": 3 },
-          "Smith machine seated overhead press": { "name": "Smith machine seated overhead press", "notes": [], "category": 3 },
-          "Reverse-grip lat pull-down": { "name": "Reverse-grip lat pull-down", "notes": ["85 90kg"], "category": 1 }
-        };
-        
-        // --- Modal Logic ---
-        const showModal = (title, message, callback) => {
-            modal.querySelector('#modal-title').textContent = title;
-            modal.querySelector('#modal-message').textContent = message;
-            confirmCallback = callback;
-            modal.classList.add('visible');
+    // NEW: Workout ID Modal Elements
+    const workoutIdModal = document.getElementById('workout-id-modal');
+    const modalExerciseName = document.getElementById('modal-exercise-name');
+    const modalIdButtonsContainer = document.getElementById('modal-id-buttons');
+    const modalIdSaveBtn = document.getElementById('modal-id-save-btn');
+    const modalIdCancelBtn = document.getElementById('modal-id-cancel-btn');
+
+    let USER_LOCKED = true;
+    let totalExercises = 0;
+    let confirmCallback = null;
+    let areCompletedHidden = true;
+    let currentEditingElement = null; // NEW: To track which exercise is being edited in the modal
+    
+    const defaultUserData = {
+      "Cable straight-arm pull-down": { "name": "Cable straight-arm pull-down", "workout_ids": [3] },
+      "Incline dumbbell fly": { "name": "Incline dumbbell fly", "workout_ids": [3] },
+      "Cable one-arm lateral raise": { "name": "Cable one-arm lateral raise", "workout_ids": [2] },
+      "Machine seated crunch": { "name": "Machine seated crunch", "workout_ids": [2] },
+      "Cable Y-raise": { "name": "Cable Y-raise", "workout_ids": [3] },
+      "Machine high row": { "name": "Machine high row", "workout_ids": [3] },
+      "Dumbbell fly": { "name": "Dumbbell fly", "workout_ids": [3] },
+      "Rope lat pull-down": { "name": "Rope lat pull-down", "workout_ids": [3] },
+      "Pull-up": { "name": "Pull-up", "workout_ids": [1] },
+      "Machine fly": { "name": "Machine fly", "workout_ids": [1] },
+      "Machine one-arm row": { "name": "Machine one-arm row", "workout_ids": [1] },
+      "Seated dumbbell overhead press": { "name": "Seated dumbbell overhead press", "workout_ids": [2] },
+      "Cable face pull": { "name": "Cable face pull", "workout_ids": [1] },
+      "Machine chest press": { "name": "Machine chest press", "workout_ids": [2] },
+      "Barbell bench press": { "name": "Barbell bench press", "workout_ids": [2] },
+      "Barbell front raise": { "name": "Barbell front raise", "workout_ids": [2] },
+      "EZ bar curl": { "name": "EZ bar curl", "workout_ids": [1] },
+      "Seated cable row": { "name": "Seated cable row", "workout_ids": [1] },
+      "Machine Lateral Raise": { "name": "Machine Lateral Raise", "workout_ids": [2] },
+      "Machine-assisted chest dip": { "name": "Machine-assisted chest dip", "workout_ids": [2] },
+      "Triceps rope push-down": { "name": "Triceps rope push-down", "workout_ids": [2] },
+      "Machine leg raise crunch": { "name": "Machine leg raise crunch", "workout_ids": [1] },
+      "Machine reverse fly": { "name": "Machine reverse fly", "workout_ids": [2] },
+      "Standing twisting cable high row": { "name": "Standing twisting cable high row", "workout_ids": [1] },
+      "Machine preacher curl": { "name": "Machine preacher curl", "workout_ids": [1] },
+      "Reverse-grip lat pull-down": { "name": "Reverse-grip lat pull-down", "workout_ids": [1] }
+    };
+
+    // --- Modal Logic ---
+    const showModal = (title, message, callback) => {
+        confirmationModal.querySelector('#modal-title').textContent = title;
+        confirmationModal.querySelector('#modal-message').textContent = message;
+        confirmCallback = callback;
+        confirmationModal.classList.add('visible');
+    }
+
+    const hideModal = () => {
+        confirmationModal.classList.remove('visible');
+        confirmCallback = null;
+    }
+
+    confirmationModal.addEventListener('click', (e) => {
+        if (e.target.id === 'modal-cancel-btn' || e.target.classList.contains('modal-overlay')) {
+            hideModal();
         }
-
-        const hideModal = () => {
-            modal.classList.remove('visible');
-            confirmCallback = null;
+        if (e.target.id === 'modal-confirm-btn' && confirmCallback) {
+            confirmCallback();
+            hideModal();
         }
+    });
 
-        modal.addEventListener('click', (e) => {
-            if (e.target.id === 'modal-cancel-btn' || e.target.classList.contains('modal-overlay')) {
-                hideModal();
+    // --- Event Listeners ---
+    themeToggleBtn.addEventListener('click', toggleTheme);
+    filterToggleBtn.addEventListener('click', toggleFilterSidebar);
+    closeFilterBtn.addEventListener('click', toggleFilterSidebar);
+    searchBtn.addEventListener('click', applyFilter);
+    searchInput.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') applyFilter();
+    });
+    filterSelects.forEach(select => select.addEventListener('change', applyFilter));
+    userModeBtn.addEventListener('click', toggleUserMode);
+    userLockBtn.addEventListener('click', toggleUserLock);
+    saveUserBtn.addEventListener('click', saveUser);
+    resetBtn.addEventListener('click', () => {
+         showModal('Reset All Data?', 'This will permanently delete ALL saved exercise data and cannot be undone.', reset);
+    });
+    fileInput.addEventListener('change', handleFileLoad);
+    toggleCompletedBtn.addEventListener('click', toggleCompletedVisibility);
+    
+    container.addEventListener('click', (e) => {
+        const exerciseElement = e.target.closest('.exercise');
+        if (!exerciseElement) return;
+
+        const interactiveElement = e.target.closest('[data-action], input, a, .workout-id-btn');
+
+        if (interactiveElement) {
+            const action = interactiveElement.dataset.action;
+            switch (action) {
+                case 'toggle-favourite':
+                    toggleExerciseFavourite(exerciseElement);
+                    break;
+                case 'toggle-complete':
+                    toggleExerciseComplete(interactiveElement, exerciseElement);
+                    break;
+                case 'quick-assign-id':
+                    handleQuickAssignId(interactiveElement, exerciseElement);
+                    break;
             }
-            if (e.target.id === 'modal-confirm-btn' && confirmCallback) {
-                confirmCallback();
-                hideModal();
-            }
-        });
-
-        // --- Event Listeners ---
-        themeToggleBtn.addEventListener('click', toggleTheme);
-        filterToggleBtn.addEventListener('click', toggleFilterSidebar);
-        closeFilterBtn.addEventListener('click', toggleFilterSidebar);
-        searchBtn.addEventListener('click', applyFilter);
-        searchInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') applyFilter();
-        });
-        filterSelects.forEach(select => select.addEventListener('change', applyFilter));
-        userModeBtn.addEventListener('click', toggleUserMode);
-        userLockBtn.addEventListener('click', toggleUserLock);
-        saveUserBtn.addEventListener('click', saveUser);
-        resetBtn.addEventListener('click', () => {
-             showModal('Reset All Data?', 'This will permanently delete ALL saved exercise data and cannot be undone.', reset);
-        });
-        fileInput.addEventListener('change', handleFileLoad);
-        toggleCompletedBtn.addEventListener('click', toggleCompletedVisibility);
-        
-        container.addEventListener('click', (e) => {
-            const exerciseElement = e.target.closest('.exercise');
-            if (!exerciseElement) return;
-
-            const interactiveElement = e.target.closest('[data-action], input, a');
-
-            if (interactiveElement) {
-                const action = interactiveElement.dataset.action;
-                switch (action) {
-                    case 'toggle-favourite':
-                        toggleExerciseFavourite(interactiveElement, exerciseElement);
-                        break;
-                    case 'toggle-complete':
-                        toggleExerciseComplete(interactiveElement, exerciseElement);
-                        break;
-                    case 'add-note':
-                        addNote(exerciseElement);
-                        break;
-                    case 'clear-notes':
-                        showModal('Clear All Notes?', 'This will remove all notes for this exercise.', () => clearNotes(exerciseElement));
-                        break;
-                }
-            } else {
-                exerciseElement.classList.toggle('open');
-            }
-        });
-
-
-        container.addEventListener('change', (e) => {
-            const target = e.target;
-            const exerciseElement = target.closest('.exercise');
-            if (target.dataset.action === 'save-category' && exerciseElement) {
-                const name = exerciseElement.querySelector('.exercise-name').textContent;
-                const obj = _getExerciseObj(name);
-                const newCategory = parseInt(target.value, 10);
-                if (!isNaN(newCategory) && newCategory > 0 && newCategory <= 7) {
-                    obj.category = newCategory;
-                    _saveExerciseData(name, obj);
-                }
-            }
-        });
-        
-        // --- Core Functions ---
-        function toggleFilterSidebar() {
-            const isOpen = filterSidebar.classList.toggle('open');
-            filterToggleBtn.setAttribute('aria-expanded', isOpen);
+        } else {
+            exerciseElement.classList.toggle('open');
         }
+    });
 
-        function toggleTheme() {
-            const isCurrentlyLight = document.body.classList.toggle('light-mode');
-            themeToggleBtn.textContent = isCurrentlyLight ? '🌙' : '☀️';
-            localStorage.setItem('theme', isCurrentlyLight ? 'light' : 'dark');
+    container.addEventListener('input', (e) => {
+        const target = e.target;
+        const exerciseElement = target.closest('.exercise');
+        if (target.dataset.action === 'save-workout-ids' && exerciseElement) {
+            const name = exerciseElement.querySelector('.exercise-name').textContent;
+            const obj = _getExerciseObj(name);
             
-            const oldFolder = isCurrentlyLight ? 'inverted_exercises' : 'exercises';
-            const newFolder = isCurrentlyLight ? 'exercises' : 'inverted_exercises';
+            const ids = target.value.split(',')
+                .map(s => parseInt(s.trim()))
+                .filter(n => !isNaN(n) && n > 0);
+                
+            obj.workout_ids = [...new Set(ids)];
+            _saveExerciseData(name, obj);
+            
+            _updateCardUI(exerciseElement, obj);
+        }
+    });
+    
+    // --- Core Functions ---
+    function toggleFilterSidebar() {
+        const isOpen = filterSidebar.classList.toggle('open');
+        filterToggleBtn.setAttribute('aria-expanded', isOpen);
+    }
 
-            document.querySelectorAll('.exercise:not(#exercise-template) img').forEach(img => {
-                img.src = img.src.replace(`/${oldFolder}/`, `/${newFolder}/`);
+    function toggleTheme() {
+        const isCurrentlyLight = document.body.classList.toggle('light-mode');
+        themeToggleBtn.textContent = isCurrentlyLight ? '🌙' : '☀️';
+        localStorage.setItem('theme', isCurrentlyLight ? 'light' : 'dark');
+        
+        const oldFolder = isCurrentlyLight ? 'inverted_exercises' : 'exercises';
+        const newFolder = isCurrentlyLight ? 'exercises' : 'inverted_exercises';
+
+        document.querySelectorAll('.exercise:not(#exercise-template) img').forEach(img => {
+            img.src = img.src.replace(`/${oldFolder}/`, `/${newFolder}/`);
+        });
+    }
+
+    function toggleUserLock() {
+        USER_LOCKED = !USER_LOCKED;
+        userLockBtn.textContent = USER_LOCKED ? "UNLOCK" : "LOCK";
+        document.querySelectorAll('.user').forEach(el => el.classList.toggle('hidden', USER_LOCKED));
+    }
+
+    function toggleUserMode() {
+        userModeBtn.classList.toggle('saved');
+        userModeBtn.textContent = userModeBtn.classList.contains('saved') 
+            ? "Show All Exercises" 
+            : "Show Saved Only";
+        applyFilter();
+    }
+    
+    function toggleCompletedVisibility() {
+        areCompletedHidden = !areCompletedHidden;
+        const completedExercises = document.querySelectorAll('.exercise.completed');
+        
+        completedExercises.forEach(el => {
+            el.classList.toggle('hide-completed', areCompletedHidden);
+        });
+
+        toggleCompletedBtn.textContent = areCompletedHidden ? 'Show Completed' : 'Hide Completed';
+    }
+
+    // --- Data Handling & Storage ---
+
+    function _getExerciseObj(name) {
+        const stored = localStorage.getItem(name);
+        const defaultObj = { name: name, workout_ids: [] };
+        if (!stored) return defaultObj;
+
+        try {
+            const obj = JSON.parse(stored);
+            if (obj.hasOwnProperty('category') && !obj.hasOwnProperty('workout_ids')) {
+                obj.workout_ids = obj.category > 0 ? [obj.category] : [];
+                delete obj.category; 
+                _saveExerciseData(name, obj); 
+            }
+            
+            return {
+                name: name,
+                workout_ids: Array.isArray(obj.workout_ids) ? obj.workout_ids : []
+            };
+        } catch (e) {
+            return defaultObj;
+        }
+    }
+
+    function _saveExerciseData(name, obj) {
+        if (obj.workout_ids.length === 0) {
+            localStorage.removeItem(name);
+        } else {
+            localStorage.setItem(name, JSON.stringify(obj));
+        }
+    }
+    
+    function saveUser() {
+        const userObj = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key === 'theme') continue;
+            userObj[key] = JSON.parse(localStorage.getItem(key));
+        }
+        const blob = new Blob([JSON.stringify(userObj, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = "user_workouts.json"; 
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+    
+    function handleFileLoad(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            showModal('Load User Data?', 'This will overwrite existing data and upgrade its format if necessary.', () => {
+                const rawData = JSON.parse(e.target.result);
+                Object.keys(localStorage).forEach(key => {
+                    if (key !== 'theme') localStorage.removeItem(key);
+                });
+                for (const key in rawData) {
+                    const exerciseData = rawData[key];
+                    localStorage.setItem(key, JSON.stringify(exerciseData));
+                }
+                location.reload();
             });
+        };
+        reader.readAsText(file);
+        fileInput.value = '';
+    }
+
+    function reset() {
+        Object.keys(localStorage).forEach(key => {
+            if (key !== 'theme') localStorage.removeItem(key);
+        });
+        location.reload();
+    }
+
+    // --- Exercise Card Logic ---
+    
+    function _updateCardUI(exerciseElement, obj) {
+        const isSaved = obj.workout_ids.length > 0;
+        exerciseElement.classList.toggle('saved', isSaved);
+
+        const favouriteBtn = exerciseElement.querySelector('.favouriteBtn');
+        favouriteBtn.classList.toggle('saved-true', isSaved);
+        favouriteBtn.textContent = isSaved ? '★' : '☆';
+
+        const workoutIdInput = exerciseElement.querySelector('.exerciseWorkoutIds');
+        workoutIdInput.value = obj.workout_ids.sort((a, b) => a - b).join(', ');
+
+        const idButtons = exerciseElement.querySelectorAll('.workout-id-btn');
+        idButtons.forEach(btn => {
+            const id = parseInt(btn.dataset.id, 10);
+            btn.classList.toggle('active', obj.workout_ids.includes(id));
+        });
+    }
+
+    // EDITED: Now opens the custom modal instead of prompting
+    function toggleExerciseFavourite(exerciseElement) {
+        showWorkoutIdModal(exerciseElement);
+    }
+    
+    function handleQuickAssignId(button, exerciseElement) {
+        const idToToggle = parseInt(button.dataset.id, 10);
+        const name = exerciseElement.querySelector('.exercise-name').textContent;
+        const obj = _getExerciseObj(name);
+        
+        const idIndex = obj.workout_ids.indexOf(idToToggle);
+
+        if (idIndex > -1) {
+            obj.workout_ids.splice(idIndex, 1);
+        } else {
+            obj.workout_ids.push(idToToggle);
         }
 
-        function toggleUserLock() {
-            USER_LOCKED = !USER_LOCKED;
-            userLockBtn.textContent = USER_LOCKED ? "UNLOCK" : "LOCK";
-            document.querySelectorAll('.user').forEach(el => el.classList.toggle('hidden', USER_LOCKED));
-        }
+        _saveExerciseData(name, obj);
+        _updateCardUI(exerciseElement, obj);
+    }
+        
+    function toggleExerciseComplete(completeBtn, exerciseElement) {
+        const isCompleted = exerciseElement.classList.toggle('completed');
+        completeBtn.classList.toggle('completed-true', isCompleted);
 
-        function toggleUserMode() {
-            userModeBtn.classList.toggle('saved');
-            userModeBtn.textContent = userModeBtn.classList.contains('saved') 
-                ? "Show All Exercises" 
-                : "Show Saved Only";
+        if (isCompleted && areCompletedHidden) {
+            exerciseElement.classList.add('hide-completed');
+        }
+        
+        const anyCompleted = document.querySelector('.exercise.completed');
+        toggleCompletedBtn.classList.toggle('hidden', !anyCompleted);
+    }
+    
+    // --- NEW: Workout ID Modal Functions ---
+    
+    function showWorkoutIdModal(exerciseElement) {
+        currentEditingElement = exerciseElement;
+        const name = exerciseElement.querySelector('.exercise-name').textContent;
+        const obj = _getExerciseObj(name);
+
+        modalExerciseName.textContent = name;
+        modalIdButtonsContainer.innerHTML = ''; // Clear previous buttons
+
+        for (let i = 1; i <= 7; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'workout-id-btn';
+            btn.textContent = i;
+            btn.dataset.id = i;
+            if (obj.workout_ids.includes(i)) {
+                btn.classList.add('active');
+            }
+            modalIdButtonsContainer.appendChild(btn);
+        }
+        
+        workoutIdModal.classList.add('visible');
+    }
+
+    function hideWorkoutIdModal() {
+        workoutIdModal.classList.remove('visible');
+        currentEditingElement = null; // Clear the state
+    }
+
+    modalIdButtonsContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('workout-id-btn')) {
+            e.target.classList.toggle('active');
+        }
+    });
+
+    modalIdSaveBtn.addEventListener('click', () => {
+        if (!currentEditingElement) return;
+
+        const name = currentEditingElement.querySelector('.exercise-name').textContent;
+        const newIds = [];
+        modalIdButtonsContainer.querySelectorAll('.workout-id-btn.active').forEach(btn => {
+            newIds.push(parseInt(btn.dataset.id));
+        });
+
+        const obj = { name, workout_ids: newIds.sort((a,b) => a - b) };
+        _saveExerciseData(name, obj);
+        _updateCardUI(currentEditingElement, obj);
+
+        if (userModeBtn.classList.contains('saved') && obj.workout_ids.length === 0) {
             applyFilter();
         }
-        
-        function toggleCompletedVisibility() {
-            areCompletedHidden = !areCompletedHidden;
-            const completedExercises = document.querySelectorAll('.exercise.completed');
-            
-            completedExercises.forEach(el => {
-                el.classList.toggle('hide-completed', areCompletedHidden);
-            });
 
-            toggleCompletedBtn.textContent = areCompletedHidden ? 'Show Completed' : 'Hide Completed';
-        }
-
-        // --- Data Handling & Storage ---
-
-        function _getExerciseObj(name) {
-            const stored = localStorage.getItem(name);
-            if (!stored) return { name: name, notes: [], category: 0 };
-            try {
-                const obj = JSON.parse(stored);
-                if (typeof obj === 'number') return { name: name, notes: [], category: obj };
-                return { name: name, notes: obj.notes || [], category: obj.category || 0 };
-            } catch (e) {
-                return { name: name, notes: [], category: 0 };
-            }
-        }
-
-        function _saveExerciseData(name, obj) {
-            if (obj.category === 0 && (!obj.notes || obj.notes.length === 0)) {
-                localStorage.removeItem(name);
-            } else {
-                localStorage.setItem(name, JSON.stringify(obj));
-            }
-        }
-        
-        function saveUser() {
-            const userObj = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key === 'theme') continue;
-                userObj[key] = localStorage.getItem(key);
-            }
-            const blob = new Blob([JSON.stringify(userObj, null, 2)], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = "user.json";
-            link.click();
-            URL.revokeObjectURL(link.href);
-        }
-
-        function handleFileLoad(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                showModal('Load User Data?', 'This will overwrite existing data and upgrade its format if necessary.', () => {
-                    const rawData = JSON.parse(e.target.result);
-                    const exercises = {};
-
-                    for (const key in rawData) {
-                        const value = rawData[key];
-                        let exerciseName = key.replace('_notes', '').replace('_category', '');
-                        if (!exercises[exerciseName]) {
-                            exercises[exerciseName] = { name: exerciseName, notes: [], category: 1 };
-                        }
-                        if (key.endsWith('_notes')) {
-                            try {
-                                exercises[exerciseName].notes = JSON.parse(value).notes || [];
-                            } catch (err) {}
-                        } else if (key.endsWith('_category')) {
-                            exercises[exerciseName].category = parseInt(value, 10) || 1;
-                        } else {
-                            try {
-                                const parsed = JSON.parse(value);
-                                if (typeof parsed === 'object' && parsed.name) {
-                                    Object.assign(exercises[exerciseName], parsed);
-                                }
-                            } catch (err) {
-                                const category = parseInt(value, 10);
-                                if (!isNaN(category)) exercises[exerciseName].category = category;
-                            }
-                        }
-                    }
-
-                    Object.keys(localStorage).forEach(key => {
-                        if (key !== 'theme') localStorage.removeItem(key);
-                    });
-
-                    for (const name in exercises) {
-                         localStorage.setItem(name, JSON.stringify(exercises[name]));
-                    }
-                    location.reload();
-                });
-            };
-            reader.readAsText(file);
-            fileInput.value = '';
-        }
-
-        function reset() {
-            Object.keys(localStorage).forEach(key => {
-                if (key !== 'theme') localStorage.removeItem(key);
-            });
-            location.reload();
-        }
-
-        // --- Exercise Card Logic ---
-        
-        function _updateCardUI(exerciseElement, obj) {
-            const isSaved = obj.category > 0;
-            exerciseElement.classList.toggle('saved', isSaved);
-
-            const favouriteBtn = exerciseElement.querySelector('.favouriteBtn');
-            favouriteBtn.classList.toggle('saved-true', isSaved);
-            favouriteBtn.textContent = isSaved ? '★' : '☆';
-
-            exerciseElement.querySelector('.exerciseCategory').value = obj.category > 0 ? obj.category : 1;
-
-            const notesList = exerciseElement.querySelector('.notes-list');
-            const template = document.getElementById('exercise-template').querySelector('.exerciseNote.hidden');
-            notesList.innerHTML = '';
-            
-            if (obj.notes && obj.notes.length > 0) {
-                obj.notes.forEach(noteStr => {
-                    const noteElement = template.cloneNode(true);
-                    noteElement.textContent = noteStr;
-                    noteElement.classList.remove('hidden');
-                    notesList.appendChild(noteElement);
-                });
-            } else {
-                 const p = document.createElement('p');
-                 p.textContent = "No notes yet.";
-                 p.style.cssText = "color: var(--text-muted); font-style: italic;";
-                 notesList.appendChild(p);
-            }
-        }
-
-        function addNote(exerciseElement) {
-            const textElement = exerciseElement.querySelector('.noteInput');
-            const noteText = textElement.value.trim();
-            if (!noteText) return;
-
-            const name = exerciseElement.querySelector('.exercise-name').textContent;
-            const obj = _getExerciseObj(name);
-            obj.notes.push(noteText);
-            if (obj.category === 0) obj.category = 1;
-
-            _saveExerciseData(name, obj);
-            _updateCardUI(exerciseElement, obj);
-            textElement.value = "";
-        }
-
-        function clearNotes(exerciseElement) {
-            const name = exerciseElement.querySelector('.exercise-name').textContent;
-            const obj = _getExerciseObj(name);
-            obj.notes = [];
-            _saveExerciseData(name, obj);
-            _updateCardUI(exerciseElement, obj);
-        }
-
-        function toggleExerciseFavourite(favouriteBtn, exerciseElement) {
-            const name = exerciseElement.querySelector('.exercise-name').textContent;
-            const obj = _getExerciseObj(name);
-            const isCurrentlySaved = obj.category > 0;
-
-            if (isCurrentlySaved) {
-                const unfavouriteAction = () => {
-                    obj.category = 0;
-                    _saveExerciseData(name, obj);
-                    _updateCardUI(exerciseElement, obj);
-                    if (userModeBtn.classList.contains('saved')) applyFilter();
-                };
-
-                if (obj.notes && obj.notes.length > 0) {
-                    showModal(`Unfavourite ${name}?`, "Your notes for this exercise will be kept but hidden. Re-favourite it to see them again.", unfavouriteAction);
-                } else {
-                    unfavouriteAction();
-                }
-            } else {
-                obj.category = 1;
-                _saveExerciseData(name, obj);
-                _updateCardUI(exerciseElement, obj);
-            }
-        }
-        
-        function toggleExerciseComplete(completeBtn, exerciseElement) {
-            const isCompleted = exerciseElement.classList.toggle('completed');
-            completeBtn.classList.toggle('completed-true', isCompleted);
-
-            if (isCompleted && areCompletedHidden) {
-                exerciseElement.classList.add('hide-completed');
-            }
-            
-            const anyCompleted = document.querySelector('.exercise.completed');
-            toggleCompletedBtn.classList.toggle('hidden', !anyCompleted);
-        }
-        
-        // --- Filtering Logic ---
-        function applyFilter() {
-            const query = searchInput.value.toLowerCase();
-            const equipment = document.getElementById("equipment").value;
-            const force = document.getElementById("ForceSelection").value;
-            const target = document.getElementById("TargetMuscleFilter").value;
-            const synergist = document.getElementById("SynergistMuscleFilter").value;
-            const category = document.getElementById("categorySelection").value;
-            const showSavedOnly = userModeBtn.classList.contains('saved');
-            let visibleCount = 0;
-
-            document.querySelectorAll('.exercise:not(#exercise-template)').forEach(e => {
-                let isVisible = true;
-                const name = e.querySelector('.exercise-name').textContent;
-                const userObj = _getExerciseObj(name);
-
-                if (showSavedOnly && userObj.category === 0) isVisible = false;
-                if (query && !name.toLowerCase().includes(query)) isVisible = false;
-                if (equipment !== 'empty' && !Array.from(e.querySelectorAll('.tag')).some(t => t.textContent === equipment)) isVisible = false;
-                if (force !== 'empty' && !e.querySelector('.meta-force').textContent.includes(force)) isVisible = false;
-                if (target !== 'empty' && !e.querySelector('.meta-target').textContent.includes(target)) isVisible = false;
-                if (synergist !== 'empty' && !e.querySelector('.meta-synergists').textContent.includes(synergist)) isVisible = false;
-                if (category && userObj.category !== parseInt(category)) isVisible = false;
-
-                e.classList.toggle('hidden', !isVisible);
-                if (isVisible) visibleCount++;
-            });
-
-            noResultsElement.classList.toggle('hidden', visibleCount > 0);
-        }
-
-        // <<<<<<< Function to load default data if localStorage is empty
-        function loadDefaultData() {
-            const hasExistingData = Object.keys(localStorage).some(key => key !== 'theme');
-
-            if (!hasExistingData) {
-                console.log("No user data found. Loading default set.");
-                for (const key in defaultUserData) {
-                    if (Object.prototype.hasOwnProperty.call(defaultUserData, key)) {
-                        localStorage.setItem(key, JSON.stringify(defaultUserData[key]));
-                    }
-                }
-            } else {
-                console.log("Existing user data found. Skipping default load.");
-            }
-        }
-        
-        // --- Initial Load ---
-        async function init() {
-            if (localStorage.getItem('theme') === 'light') {
-                document.body.classList.add('light-mode');
-                themeToggleBtn.textContent = '🌙';
-            }
-
-            loadDefaultData();
-            
-            // MODIFIED: Removed the initial call to toggleUserLock() to keep it locked by default.
-            await loadFilters();
-            await loadExercises();
-        }
-
-        async function loadFilters() {
-             const loadJson = async (url) => fetch(url).then(r => r.json());
-             const populateSelect = (elementId, data, key) => {
-                 const parent = document.getElementById(elementId);
-                 data[key].sort().forEach(text => {
-                     const option = document.createElement('option');
-                     option.textContent = text;
-                     option.value = text;
-                     parent.appendChild(option);
-                 });
-             };
-             const [forces, equipment, synergists, targets] = await Promise.all([
-                 loadJson('assets/data/forces.json'),
-                 loadJson('assets/data/equipment_tags.json'),
-                 loadJson('assets/data/synergists.json'),
-                 loadJson('assets/data/target_muscles.json')
-             ]);
-             populateSelect('ForceSelection', forces, 'forces');
-             populateSelect('equipment', equipment, 'equipment');
-             populateSelect('SynergistMuscleFilter', synergists, 'synergists');
-             populateSelect('TargetMuscleFilter', targets, 'target muscles');
-        }
-
-        async function loadExercises() {
-            try {
-                const names_obj = await fetch("assets/data/names.json").then(r => r.json());
-                totalExercises = names_obj.names.length;
-                const names = names_obj.names;
-                const chunkSize = 15;
-
-                for (let i = 0; i < names.length; i += chunkSize) {
-                    const chunk = names.slice(i, i + chunkSize);
-                    await Promise.all(chunk.map(name => _createAndSetupExercise(name)));
-                }
-            } catch (error) {
-                console.error("Failed to load exercises:", error);
-                loadingIndicator.textContent = "Error loading exercise data.";
-            } finally {
-                loadingIndicator.classList.add('hidden');
-            }
-        }
-        
-        function _createExerciseElement(name, metadata) {
-            const template = document.getElementById('exercise-template');
-            let exerciseElement = template.cloneNode(true);
-            exerciseElement.id = name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-            exerciseElement.querySelector('.exercise-name').textContent = name;
-
-            const isLightMode = document.body.classList.contains('light-mode');
-            const imgFolder = isLightMode ? 'exercises' : 'inverted_exercises';
-            const img = exerciseElement.querySelector('img');
-            img.src = `assets/data/${imgFolder}/${name}.webp`;
-            img.alt = name;
-
-            exerciseElement.querySelector('.meta-target').textContent = metadata['Target muscle'];
-            exerciseElement.querySelector('.meta-synergists').textContent = metadata['Synergists'];
-            exerciseElement.querySelector('.meta-mechanics').textContent = metadata['Mechanics'];
-            exerciseElement.querySelector('.meta-force').textContent = metadata['Force'];
-
-            const tagsContainer = exerciseElement.querySelector('.exercise-tags-preview');
-            tagsContainer.innerHTML = '';
-            metadata.tags.forEach(tagText => {
-                const element = document.createElement('span');
-                element.classList.add('tag');
-                element.textContent = tagText;
-                tagsContainer.appendChild(element);
-            });
-
-            exerciseElement.classList.remove('hidden');
-            return exerciseElement;
-        }
-
-        async function _createAndSetupExercise(name) {
-            try {
-                const metadata = await fetch(`assets/data/exercises/${name}.json`).then(r => r.json());
-                const exerciseElement = _createExerciseElement(name, metadata);
-                const userObj = _getExerciseObj(name);
-                _updateCardUI(exerciseElement, userObj);
-                container.appendChild(exerciseElement);
-
-                let count = parseInt(exerciseCountElement.textContent) + 1;
-                exerciseCountElement.textContent = count;
-                let percentage = (count / totalExercises) * 100;
-                loadingPercentage.textContent = `${percentage.toFixed(0)}%`;
-            } catch (error) {
-                console.error(`Failed to load metadata for ${name}:`, error);
-            }
-        }
-
-        init(); // Start the application
+        hideWorkoutIdModal();
     });
-    </script>
+
+    modalIdCancelBtn.addEventListener('click', hideWorkoutIdModal);
+    workoutIdModal.addEventListener('click', (e) => {
+        if (e.target === workoutIdModal) {
+            hideWorkoutIdModal();
+        }
+    });
+
+
+    // --- Filtering Logic ---
+    function applyFilter() {
+        const query = searchInput.value.toLowerCase();
+        const equipment = document.getElementById("equipment").value;
+        const force = document.getElementById("ForceSelection").value;
+        const target = document.getElementById("TargetMuscleFilter").value;
+        const synergist = document.getElementById("SynergistMuscleFilter").value;
+        const workoutId = document.getElementById("workoutIdFilter").value;
+        const showSavedOnly = userModeBtn.classList.contains('saved');
+        let visibleCount = 0;
+
+        document.querySelectorAll('.exercise:not(#exercise-template)').forEach(e => {
+            const name = e.querySelector('.exercise-name').textContent;
+            const userObj = _getExerciseObj(name);
+
+            let isVisible = true;
+
+            if (showSavedOnly && userObj.workout_ids.length === 0) { isVisible = false; }
+            if (isVisible && query) {
+                const searchableText = [
+                    name,
+                    e.querySelector('.meta-target').textContent,
+                    e.querySelector('.meta-synergists').textContent,
+                    e.querySelector('.meta-mechanics').textContent,
+                    e.querySelector('.meta-force').textContent,
+                    Array.from(e.querySelectorAll('.tag')).map(t => t.textContent).join(' ')
+                ].join(' ').toLowerCase();
+                if (!searchableText.includes(query)) { isVisible = false; }
+            }
+            if (isVisible && equipment !== 'empty' && !Array.from(e.querySelectorAll('.tag')).some(t => t.textContent === equipment)) { isVisible = false; }
+            if (isVisible && force !== 'empty' && !e.querySelector('.meta-force').textContent.includes(force)) { isVisible = false; }
+            if (isVisible && target !== 'empty' && !e.querySelector('.meta-target').textContent.includes(target)) { isVisible = false; }
+            if (isVisible && synergist !== 'empty' && !e.querySelector('.meta-synergists').textContent.includes(synergist)) { isVisible = false; }
+            if (isVisible && workoutId && !userObj.workout_ids.includes(parseInt(workoutId))) { isVisible = false; }
+
+            e.classList.toggle('hidden', !isVisible);
+            if (isVisible) { visibleCount++; }
+        });
+
+        noResultsElement.classList.toggle('hidden', visibleCount > 0);
+    }
+
+    function loadDefaultData() {
+        const hasExistingData = Object.keys(localStorage).some(key => key !== 'theme');
+
+        if (!hasExistingData) {
+            console.log("No user data found. Loading default set.");
+            for (const key in defaultUserData) {
+                if (Object.prototype.hasOwnProperty.call(defaultUserData, key)) {
+                    localStorage.setItem(key, JSON.stringify(defaultUserData[key]));
+                }
+            }
+        } else {
+            console.log("Existing user data found. Skipping default load.");
+        }
+    }
+    
+    // --- Initial Load ---
+    async function init() {
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggleBtn.textContent = '🌙';
+        }
+
+        loadDefaultData();
+        
+        await loadFilters();
+        await loadExercises();
+    }
+
+    async function loadFilters() {
+         const loadJson = async (url) => fetch(url).then(r => r.json());
+         const populateSelect = (elementId, data, key) => {
+             const parent = document.getElementById(elementId);
+             data[key].sort().forEach(text => {
+                 const option = document.createElement('option');
+                 option.textContent = text;
+                 option.value = text;
+                 parent.appendChild(option);
+             });
+         };
+         const [forces, equipment, synergists, targets] = await Promise.all([
+             loadJson('assets/data/forces.json'),
+             loadJson('assets/data/equipment_tags.json'),
+             loadJson('assets/data/synergists.json'),
+             loadJson('assets/data/target_muscles.json')
+         ]);
+         populateSelect('ForceSelection', forces, 'forces');
+         populateSelect('equipment', equipment, 'equipment');
+         populateSelect('SynergistMuscleFilter', synergists, 'synergists');
+         populateSelect('TargetMuscleFilter', targets, 'target muscles');
+    }
+
+    async function loadExercises() {
+        try {
+            const names_obj = await fetch("assets/data/names.json").then(r => r.json());
+            totalExercises = names_obj.names.length;
+            const names = names_obj.names;
+            const chunkSize = 15;
+
+            for (let i = 0; i < names.length; i += chunkSize) {
+                const chunk = names.slice(i, i + chunkSize);
+                await Promise.all(chunk.map(name => _createAndSetupExercise(name)));
+            }
+        } catch (error) {
+            console.error("Failed to load exercises:", error);
+            loadingIndicator.textContent = "Error loading exercise data.";
+        } finally {
+            loadingIndicator.classList.add('hidden');
+        }
+    }
+    
+    function _createExerciseElement(name, metadata) {
+        const template = document.getElementById('exercise-template');
+        let exerciseElement = template.cloneNode(true);
+        exerciseElement.id = name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        exerciseElement.querySelector('.exercise-name').textContent = name;
+
+        const isLightMode = document.body.classList.contains('light-mode');
+        const imgFolder = isLightMode ? 'exercises' : 'inverted_exercises';
+        const img = exerciseElement.querySelector('img');
+        img.src = `assets/data/${imgFolder}/${name}.webp`;
+        img.alt = name;
+
+        exerciseElement.querySelector('.meta-target').textContent = metadata['Target muscle'];
+        exerciseElement.querySelector('.meta-synergists').textContent = metadata['Synergists'];
+        exerciseElement.querySelector('.meta-mechanics').textContent = metadata['Mechanics'];
+        exerciseElement.querySelector('.meta-force').textContent = metadata['Force'];
+
+        const tagsContainer = exerciseElement.querySelector('.exercise-tags-detail');
+        tagsContainer.innerHTML = '';
+        metadata.tags.forEach(tagText => {
+            const element = document.createElement('span');
+            element.classList.add('tag');
+            element.textContent = tagText;
+            tagsContainer.appendChild(element);
+        });
+
+        const buttonContainer = exerciseElement.querySelector('.workout-id-buttons');
+        buttonContainer.innerHTML = ''; 
+        for (let i = 1; i <= 7; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'workout-id-btn';
+            btn.textContent = i;
+            btn.dataset.action = 'quick-assign-id';
+            btn.dataset.id = i;
+            buttonContainer.appendChild(btn);
+        }
+
+        exerciseElement.classList.remove('hidden');
+        return exerciseElement;
+    }
+
+    async function _createAndSetupExercise(name) {
+        try {
+            const metadata = await fetch(`assets/data/exercises/${name}.json`).then(r => r.json());
+            const exerciseElement = _createExerciseElement(name, metadata);
+            const userObj = _getExerciseObj(name); 
+            _updateCardUI(exerciseElement, userObj);
+            container.appendChild(exerciseElement);
+
+            let count = parseInt(exerciseCountElement.textContent) + 1;
+            exerciseCountElement.textContent = count;
+            let percentage = (count / totalExercises) * 100;
+            loadingPercentage.textContent = `${percentage.toFixed(0)}%`;
+        } catch (error) {
+            console.error(`Failed to load metadata for ${name}:`, error);
+        }
+    }
+
+    init(); // Start the application
+});
+</script>
 </body>
 </html>
