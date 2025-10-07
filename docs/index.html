@@ -111,6 +111,7 @@
             justify-content: center;
             align-items: center;
             transition: all var(--transition-speed);
+            flex-shrink: 0; /* Prevent buttons from shrinking */
         }
 
         .id-filter-btn:hover {
@@ -124,11 +125,24 @@
             color: white;
         }
 
-        /* Responsive adjustments for smaller screens */
+        /* ▼▼▼ FIXED: Responsive adjustments for smaller screens ▼▼▼ */
         @media (max-width: 768px) {
             #header-workout-id-filter {
-                /* Hide the buttons on smaller screens to prevent clutter */
-                display: none; 
+                /* Instead of hiding, make the container scrollable horizontally */
+                overflow-x: auto;
+                /* This is a key fix to make overflow work inside a flex container */
+                min-width: 0;
+                /* Adjust margin to save space */
+                margin-right: 0.5rem;
+
+                /* Hide the scrollbar for a cleaner look on touch devices */
+                -ms-overflow-style: none;  /* IE and Edge */
+                scrollbar-width: none;  /* Firefox */
+            }
+            
+            /* Add this rule to hide the scrollbar in Webkit-based browsers (Chrome, Brave, Safari) */
+            #header-workout-id-filter::-webkit-scrollbar {
+                display: none;
             }
         }
         /* ▲▲▲ END: NEW STYLING FOR HEADER ID FILTER BUTTONS ▲▲▲ */
