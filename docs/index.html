@@ -542,6 +542,28 @@
             word-break: break-word;
         }
 
+        /* ▼▼▼ NEW: STYLES FOR OVERLAY TIMER ▼▼▼ */
+        .rest-timer {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-size: 1.5rem;
+            font-family: monospace; /* Monospace font prevents width changes */
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 999;
+            user-select: none; /* Prevents text selection on click */
+            transition: background-color var(--transition-speed);
+        }
+
+        .rest-timer:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
     </style>
 </head>
 <body>
@@ -691,6 +713,9 @@
             </div>
         </div>
     </div>
+
+    <!-- ▼▼▼ NEW: OVERLAY TIMER ELEMENT ▼▼▼ -->
+    <div id="rest-timer" class="rest-timer">00:00</div>
     
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -714,8 +739,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveUserBtn = document.getElementById('saveUserBtn');
     const resetBtn = document.getElementById('resetBtn');
     const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
-    // ▼▼▼ NEW: Reference to the new header filter container ▼▼▼
     const headerIdFilterContainer = document.getElementById('header-workout-id-filter');
+    // ▼▼▼ NEW: Reference for the timer element ▼▼▼
+    const restTimerElement = document.getElementById('rest-timer');
 
 
     // Confirmation Modal Elements
@@ -733,6 +759,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let confirmCallback = null;
     let areCompletedHidden = false; 
     let currentEditingElement = null; 
+    // ▼▼▼ NEW: State variables for the timer ▼▼▼
+    let timerInterval = null;
+    let secondsElapsed = 0;
     
     const defaultUserData = {
       "Cable straight-arm pull-down": { "name": "Cable straight-arm pull-down", "workout_ids": [3] },
@@ -818,6 +847,9 @@ document.addEventListener('DOMContentLoaded', () => {
         button.classList.toggle('active');
         applyFilter();
     });
+
+    // ▼▼▼ NEW: Event listener for the timer ▼▼▼
+    restTimerElement.addEventListener('click', startOrResetTimer);
     
     container.addEventListener('click', (e) => {
         const exerciseElement = e.target.closest('.exercise');
@@ -903,6 +935,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         toggleCompletedBtn.textContent = areCompletedHidden ? 'Show' : 'Hide';
+    }
+
+    // ▼▼▼ NEW: Timer functions ▼▼▼
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function startOrResetTimer() {
+        clearInterval(timerInterval);
+        secondsElapsed = 0;
+        restTimerElement.textContent = formatTime(secondsElapsed);
+
+        timerInterval = setInterval(() => {
+            secondsElapsed++;
+            restTimerElement.textContent = formatTime(secondsElapsed);
+        }, 1000);
     }
 
     // --- Data Handling & Storage ---
@@ -1205,6 +1255,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         await loadFilters();
         await loadExercises();
+
+        startOrResetTimer(); // Start the overlay timer
     }
 
     async function loadFilters() {
