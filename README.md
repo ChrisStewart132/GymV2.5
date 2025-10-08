@@ -10,6 +10,8 @@
 
 ## localhost (android phone)
 
+![Screenshot 2025-10-09 085452](https://github.com/user-attachments/assets/6330738f-b6e8-48fc-9523-2a260950251b)
+
 ![mobilehost1](https://github.com/user-attachments/assets/9c7a93e5-8c01-42ac-8adf-aa16f4ed533c)
 
 ![mobilehost2](https://github.com/user-attachments/assets/ece650d1-94d3-4695-94ef-cb20ef461dd2)
