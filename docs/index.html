@@ -553,7 +553,7 @@
 
     <!-- ===== HEADER ===== -->
     <header class="app-header">
-        <h1>GymV2.5</h1>
+        <h1></h1>
         
         <!-- ▼▼▼ NEW: WORKOUT ID FILTER BUTTONS ADDED TO HEADER ▼▼▼ -->
         <div id="header-workout-id-filter" class="workout-id-buttons">
@@ -567,7 +567,7 @@
         </div>
         
         <div class="header-actions">
-            <button id="toggle-completed-btn" class="btn btn-sm btn-secondary hidden" aria-label="Hide Completed Exercises">Hide Completed</button>
+            <button id="toggle-completed-btn" class="btn btn-sm btn-secondary hidden" aria-label="Hide Completed Exercises">Hide</button>
             <button id="theme-toggle" aria-label="Toggle Theme">☀️</button>
             <button id="filter-toggle" aria-label="Show Filters" aria-controls="filter-sidebar" aria-expanded="false">☰</button>
         </div>
@@ -744,6 +744,12 @@ document.addEventListener('DOMContentLoaded', () => {
       "Dumbbell fly": { "name": "Dumbbell fly", "workout_ids": [3] },
       "Rope lat pull-down": { "name": "Rope lat pull-down", "workout_ids": [3] },
       "Pull-up": { "name": "Pull-up", "workout_ids": [1] },
+    "Machine triceps extension": {
+        "name": "Machine triceps extension",
+        "workout_ids": [
+        2
+        ]
+    },
       "Machine fly": { "name": "Machine fly", "workout_ids": [1] },
       "Machine one-arm row": { "name": "Machine one-arm row", "workout_ids": [1] },
       "Seated dumbbell overhead press": { "name": "Seated dumbbell overhead press", "workout_ids": [2] },
@@ -896,7 +902,7 @@ document.addEventListener('DOMContentLoaded', () => {
             el.classList.toggle('hide-completed', areCompletedHidden);
         });
 
-        toggleCompletedBtn.textContent = areCompletedHidden ? 'Show Completed' : 'Hide Completed';
+        toggleCompletedBtn.textContent = areCompletedHidden ? 'Show' : 'Hide';
     }
 
     // --- Data Handling & Storage ---
